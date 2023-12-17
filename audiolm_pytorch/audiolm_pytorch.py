@@ -9,7 +9,7 @@ from torch import nn, einsum, Tensor
 from torch.autograd import grad as torch_grad
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
-
+from audiolm_pytorch.mamba_block import MambaTransformer
 import torchaudio
 
 from einops import rearrange, repeat, reduce
@@ -529,6 +529,7 @@ class SemanticTransformer(nn.Module):
         has_condition = False,
         audio_text_condition = False,
         cond_as_self_attn_prefix = False,
+        use_mamba = False,
         cond_drop_prob = 0.5,
         grad_shrink_alpha = 0.1,
         rel_pos_bias = True,
@@ -555,20 +556,23 @@ class SemanticTransformer(nn.Module):
 
         text_dim = default(cond_dim, get_encoded_dim(t5_name))
         self.proj_text_embed = nn.Linear(text_dim, dim, bias = False) if text_dim != dim else nn.Identity()
-
-        self.transformer = Transformer(
-            dim = dim,
-            depth = depth,
-            heads = heads,
-            attn_dropout = attn_dropout,
-            ff_dropout = ff_dropout,
-            cross_attend = has_condition and not cond_as_self_attn_prefix,
-            cond_as_self_attn_prefix = cond_as_self_attn_prefix,
-            grad_shrink_alpha = grad_shrink_alpha,
-            rel_pos_bias = rel_pos_bias,
-            flash_attn = flash_attn,
-            **kwargs
-        )
+        self.use_mamba = use_mamba
+        if use_mamba:
+            self.transformer = MambaTransformer(dim, depth = depth)
+        else:
+            self.transformer = Transformer(
+                dim = dim,
+                depth = depth,
+                heads = heads,
+                attn_dropout = attn_dropout,
+                ff_dropout = ff_dropout,
+                cross_attend = has_condition and not cond_as_self_attn_prefix,
+                cond_as_self_attn_prefix = cond_as_self_attn_prefix,
+                grad_shrink_alpha = grad_shrink_alpha,
+                rel_pos_bias = rel_pos_bias,
+                flash_attn = flash_attn,
+                **kwargs
+            )
 
         self.to_logits = nn.Linear(dim, num_semantic_tokens + 1)
 

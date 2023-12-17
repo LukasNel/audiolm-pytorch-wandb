@@ -23,6 +23,8 @@ setup(
     'beartype>=0.16.1',
     'einops>=0.7.0',
     'ema-pytorch>=0.2.2',
+    'causal-conv1d==1.0.0',
+    'mamba-ssm==1.0.1',
     'encodec',
     'fairseq',
     'wandb',
