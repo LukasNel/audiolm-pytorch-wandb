@@ -42,7 +42,13 @@ class MambaTransformer(nn.Module):
         super().__init__()
         self.blocks = nn.Sequential(*[MambaBlock(dim) for _ in range(depth)])
 
-    def forward(self, x, context = None, self_attn_mask = None, context_mask = None, kv_cache = None, return_kv_cache = True):
+    def forward(self, x, 
+                self_attn_mask = None,
+                context = None,
+                context_mask = None,
+                attn_bias = None,
+                return_kv_cache = False,
+                kv_cache = None):
         x = self.blocks(x)
         if return_kv_cache:
             return x, kv_cache
