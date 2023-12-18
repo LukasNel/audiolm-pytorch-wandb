@@ -18,4 +18,4 @@ from audiolm_pytorch.hubert_kmeans import HubertWithKmeans
 from audiolm_pytorch.trainer import SoundStreamTrainer, SemanticTransformerTrainer, FineTransformerTrainer, CoarseTransformerTrainer
 
 from audiolm_pytorch.audiolm_pytorch import get_embeds
-from audiolm_pytorch.mamba_block import MambaAudioModel, MambaBlock
+from audiolm_pytorch.mamba_block import MambaTransformer, MambaBlock
