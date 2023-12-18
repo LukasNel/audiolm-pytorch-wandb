@@ -38,9 +38,10 @@ class MambaBlock(nn.Module):
     return x
   
 class MambaTransformer(nn.Module):
-    def __init__(self,dim, depth):
+    def __init__(self,dim, depth, rel_pos_bias=False):
         super().__init__()
         self.blocks = nn.Sequential(*[MambaBlock(dim) for _ in range(depth)])
+        self.rel_pos_bias = False
 
     def forward(self, x, 
                 self_attn_mask = None,
