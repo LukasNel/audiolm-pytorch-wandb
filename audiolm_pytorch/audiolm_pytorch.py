@@ -689,6 +689,7 @@ class CoarseTransformer(nn.Module):
         dim,
         depth,
         num_semantic_tokens,
+        use_mamba = False,
         heads = 8,
         attn_dropout = 0.,
         ff_dropout = 0.,
@@ -734,19 +735,23 @@ class CoarseTransformer(nn.Module):
 
         self.cross_attn_bias = nn.Parameter(torch.zeros(heads, 1, 1)) if rel_pos_bias else None
 
-        self.transformer = Transformer(
-            dim = dim,
-            depth = depth,
-            heads = heads,
-            attn_dropout = attn_dropout,
-            ff_dropout = ff_dropout,
-            cross_attend = has_condition and not cond_as_self_attn_prefix,
-            cond_as_self_attn_prefix = cond_as_self_attn_prefix,
-            grad_shrink_alpha = grad_shrink_alpha,
-            rel_pos_bias = rel_pos_bias,
-            flash_attn = flash_attn,
-            **kwargs
-        )
+        
+        if use_mamba:
+            self.transformer = MambaTransformer(dim, depth = depth)
+        else:
+            self.transformer = Transformer(
+                dim = dim,
+                depth = depth,
+                heads = heads,
+                attn_dropout = attn_dropout,
+                ff_dropout = ff_dropout,
+                cross_attend = has_condition and not cond_as_self_attn_prefix,
+                cond_as_self_attn_prefix = cond_as_self_attn_prefix,
+                grad_shrink_alpha = grad_shrink_alpha,
+                rel_pos_bias = rel_pos_bias,
+                flash_attn = flash_attn,
+                **kwargs
+            )
 
         self.codebook_size = codebook_size
         self.num_coarse_quantizers = num_coarse_quantizers
@@ -957,6 +962,8 @@ class FineTransformer(nn.Module):
         heads = 8,
         attn_dropout = 0.,
         ff_dropout = 0.,
+        use_mamba = False,
+
         t5_name = DEFAULT_T5_NAME,
         has_condition = False,
         cond_dim = None,
@@ -997,20 +1004,22 @@ class FineTransformer(nn.Module):
 
         text_dim = default(cond_dim, get_encoded_dim(t5_name))
         self.proj_text_embed = nn.Linear(text_dim, dim, bias = False) if text_dim != dim else nn.Identity()
-
-        self.transformer = Transformer(
-            dim = dim,
-            depth = depth,
-            heads = heads,
-            attn_dropout = attn_dropout,
-            ff_dropout = ff_dropout,
-            cross_attend = has_condition and not cond_as_self_attn_prefix,
-            cond_as_self_attn_prefix = cond_as_self_attn_prefix,
-            rel_pos_bias = False,
-            grad_shrink_alpha = grad_shrink_alpha,
-            flash_attn = flash_attn,
-            **kwargs
-        )
+        if use_mamba:
+            self.transformer = MambaTransformer(dim, depth = depth)
+        else:
+            self.transformer = Transformer(
+                dim = dim,
+                depth = depth,
+                heads = heads,
+                attn_dropout = attn_dropout,
+                ff_dropout = ff_dropout,
+                cross_attend = has_condition and not cond_as_self_attn_prefix,
+                cond_as_self_attn_prefix = cond_as_self_attn_prefix,
+                rel_pos_bias = False,
+                grad_shrink_alpha = grad_shrink_alpha,
+                flash_attn = flash_attn,
+                **kwargs
+            )
 
         # doing a specialized attn bias so that corresponding time steps at fine and coarse sequences attend to each other better
 
