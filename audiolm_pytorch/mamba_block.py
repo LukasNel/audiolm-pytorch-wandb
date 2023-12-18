@@ -47,8 +47,11 @@ class MambaTransformer(nn.Module):
                 context = None,
                 context_mask = None,
                 attn_bias = None,
+                rel_pos_bias = None,
                 return_kv_cache = False,
-                kv_cache = None):
+                kv_cache = None,
+                **kwargs
+                ):
         x = self.blocks(x)
         if return_kv_cache:
             return x, kv_cache
