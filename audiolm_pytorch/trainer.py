@@ -954,7 +954,7 @@ class SemanticTransformerTrainer(nn.Module):
         # log
 
         self.print(f"{steps}: loss: {logs['loss']}")
-        self.accelerator.log({"train_loss": logs['loss']}, step=steps)
+        self.accelerator.log({"train_loss": logs['loss'], 'time_elapsed': time.time() - self.start_time}, step=steps)
 
         # sample results every so often
 
@@ -1252,7 +1252,7 @@ class CoarseTransformerTrainer(nn.Module):
         # log
 
         self.print(f"{steps}: loss: {logs['loss']}")
-        self.accelerator.log({"train_loss": logs['loss']}, step=steps)
+        self.accelerator.log({"train_loss": logs['loss'], 'time_elapsed': time.time() - self.start_time}, step=steps)
 
         # sample results every so often
 
@@ -1552,7 +1552,7 @@ class FineTransformerTrainer(nn.Module):
         # log
 
         self.print(f"{steps}: loss: {logs['loss']}")
-        self.accelerator.log({"train_loss": logs['loss']}, step=steps)
+        self.accelerator.log({"train_loss": logs['loss'], 'time_elapsed': time.time() - self.start_time}, step=steps)
 
         # sample results every so often
 
