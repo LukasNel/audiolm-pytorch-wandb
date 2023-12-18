@@ -54,7 +54,7 @@ from packaging import version
 from accelerate import Accelerator, DistributedType
 from accelerate.utils import DistributedDataParallelKwargs, InitProcessGroupKwargs
 from accelerate.tracking import WandBTracker
-
+import time
 # constants
 
 DEFAULT_SAMPLE_RATE = 16000
@@ -425,7 +425,7 @@ class SoundStreamTrainer(nn.Module):
         self.results_folder.mkdir(parents = True, exist_ok = True)
 
         # save tracker hyperparameters
-
+        self.start_time = time.time()
         self.tracker_hps = hyperparameters
 
         assert self.accelerator.distributed_type != DistributedType.FSDP, 'FSDP not supported for soundstream trainer due to complex-valued stft discriminator'
@@ -852,7 +852,7 @@ class SemanticTransformerTrainer(nn.Module):
         
         hps = {"num_train_steps": num_train_steps, "data_max_length": data_max_length, "learning_rate": lr}
         self.tracker_hps = hps
-
+        self.start_time = time.time()
         self.accelerator.init_trackers("semantic", config=hps)
         self.average_valid_loss_over_grad_accum_every = average_valid_loss_over_grad_accum_every
 
@@ -943,7 +943,7 @@ class SemanticTransformerTrainer(nn.Module):
 
                 self.accelerator.backward(loss / self.grad_accum_every)
 
-            accum_log(logs, {'loss': loss.item() / self.grad_accum_every})
+            accum_log(logs, {'loss': loss.item() / self.grad_accum_every, 'time_elapsed': time.time() - self.start_time})
 
         if exists(self.max_grad_norm):
             self.accelerator.clip_grad_norm_(self.transformer.parameters(), self.max_grad_norm)
@@ -1060,6 +1060,7 @@ class CoarseTransformerTrainer(nn.Module):
             transformer = transformer,
             audio_conditioner = audio_conditioner
         )
+        self.start_time = time.time()
 
         self.register_buffer('steps', torch.tensor(0))
 
@@ -1240,7 +1241,7 @@ class CoarseTransformerTrainer(nn.Module):
 
                 self.accelerator.backward(loss / self.grad_accum_every)
 
-            accum_log(logs, {'loss': loss.item() / self.grad_accum_every})
+            accum_log(logs, {'loss': loss.item() / self.grad_accum_every, 'time_elapsed': time.time() - self.start_time})
 
         if exists(self.max_grad_norm):
             self.accelerator.clip_grad_norm_(self.transformer.parameters(), self.max_grad_norm)
@@ -1342,6 +1343,7 @@ class FineTransformerTrainer(nn.Module):
             self.use_wandb_tracking = use_wandb_tracking
             accelerate_kwargs.update(log_with = 'wandb')
         init_process_kwargs = InitProcessGroupKwargs(timeout = timedelta(seconds = init_process_group_timeout_seconds))
+        self.start_time = time.time()
 
         self.accelerator = Accelerator(
             kwargs_handlers = [DEFAULT_DDP_KWARGS, init_process_kwargs],
@@ -1539,7 +1541,7 @@ class FineTransformerTrainer(nn.Module):
 
                 self.accelerator.backward(loss / self.grad_accum_every)
 
-            accum_log(logs, {'loss': loss.item() / self.grad_accum_every})
+            accum_log(logs, {'loss': loss.item() / self.grad_accum_every, 'time_elapsed': time.time() - self.start_time})
 
         if exists(self.max_grad_norm):
             self.accelerator.clip_grad_norm_(self.transformer.parameters(), self.max_grad_norm)
